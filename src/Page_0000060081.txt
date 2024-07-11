@@ -1,0 +1,180 @@
+OBJECT Page 60081 Azure Blob Storages Accounts
+{
+  OBJECT-PROPERTIES
+  {
+    Date=11.07.24;
+    Time=15:16:14;
+    Modified=Yes;
+    Version List=ACE-ABS;
+  }
+  PROPERTIES
+  {
+    CaptionML=[DEU=Azure Blob Storages Konten;
+               ENU=Azure Blob Storages Accounts];
+    ApplicationArea=#Basic;
+    SourceTable=Table60064;
+    PageType=List;
+    UsageCategory=Administration;
+    ActionList=ACTIONS
+    {
+      { 1000000008;  ;ActionContainer;
+                      ActionContainerType=ActionItems }
+      { 1000000009;1 ;Action    ;
+                      Name=Test Auth;
+                      CaptionML=[DEU=Authentifzierung testen;
+                                 ENU=Test Authentication];
+                      Promoted=Yes;
+                      PromotedIsBig=Yes;
+                      PromotedCategory=Process;
+                      PromotedOnly=Yes;
+                      OnAction=BEGIN
+                                 ACEAzureBlobStorageMgmt.AuthenticateAgainstStorage(Rec);
+                               END;
+                                }
+      { 1000000010;1 ;Action    ;
+                      Name=List Containers;
+                      CaptionML=[DEU=Container anzeigen;
+                                 ENU=List Containers];
+                      Promoted=Yes;
+                      PromotedIsBig=Yes;
+                      Image=EntriesList;
+                      PromotedCategory=Process;
+                      PromotedOnly=Yes;
+                      OnAction=VAR
+                                 tempABSContainer@1000000000 : TEMPORARY Record 63901;
+                               BEGIN
+                                 ACEAzureBlobStorageMgmt.GetContainers(Rec, tempABSContainer);
+                                 PAGE.RUN(0, tempABSContainer);
+                               END;
+                                }
+      { 1000000013;1 ;Action    ;
+                      Name=Create Container;
+                      CaptionML=[DEU=Container erstellen;
+                                 ENU=Create Container];
+                      Promoted=Yes;
+                      PromotedIsBig=Yes;
+                      Image=Add;
+                      PromotedCategory=Process;
+                      PromotedOnly=Yes;
+                      OnAction=VAR
+                                 NewContainerName@1000000000 : Text;
+                                 Window@1000000001 : DotNet "'Microsoft.VisualBasic, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a'.Microsoft.VisualBasic.Interaction" RUNONCLIENT;
+                               BEGIN
+                                 NewContainerName := Window.InputBox('Neuer Containername:', 'Eingabe', '', 100, 100);
+
+                                 IF NewContainerName = '' THEN
+                                   EXIT;
+
+                                 ACEAzureBlobStorageMgmt.CreateContainer(Rec, NewContainerName);
+
+                                 IF GUIALLOWED THEN
+                                   MESSAGE(ContainerCreatedInfo, NewContainerName);
+                               END;
+                                }
+      { 1000000011;1 ;Action    ;
+                      Name=List Files;
+                      CaptionML=[DEU=Dateien anzeigen;
+                                 ENU=List Files];
+                      Promoted=Yes;
+                      PromotedIsBig=Yes;
+                      Image=OrderList;
+                      PromotedCategory=Process;
+                      PromotedOnly=Yes;
+                      OnAction=VAR
+                                 tempABSContainerContent@1000000000 : TEMPORARY Record 64002;
+                               BEGIN
+                                 ACEAzureBlobStorageMgmt.GetContent(Rec, Rec."Container Name", tempABSContainerContent, '', '');
+                                 PAGE.RUN(0, tempABSContainerContent);
+                               END;
+                                }
+      { 1000000012;1 ;Action    ;
+                      Name=Upload File;
+                      CaptionML=[DEU=Datei hochladen;
+                                 ENU=Upload File];
+                      Promoted=Yes;
+                      PromotedIsBig=Yes;
+                      Image=Import;
+                      PromotedCategory=Process;
+                      PromotedOnly=Yes;
+                      OnAction=VAR
+                                 LocalFilePath@1000000000 : Text;
+                                 FileManagement@1000000001 : Codeunit 419;
+                                 TempBlob@1000000002 : TEMPORARY Record 99008535;
+                                 FileInStream@1000000003 : InStream;
+                                 ABSFilePath@1000000004 : Text;
+                                 FileNameWithExtension@1000000005 : Text;
+                                 Window@1000000006 : DotNet "'Microsoft.VisualBasic, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a'.Microsoft.VisualBasic.Interaction" RUNONCLIENT;
+                               BEGIN
+                                 ABSFilePath := Window.InputBox('ABS Pfad:', 'Geben Sie den Pfad im Azure Blob Storage an', '', 100, 100);
+                                 TempBlob.Blob.CREATEINSTREAM(FileInStream);
+
+                                 LocalFilePath := FileManagement.UploadFile('Datei hochladen', LocalFilePath);
+                                 FileManagement.BLOBImportFromServerFile(TempBlob, LocalFilePath);
+                                 FileNameWithExtension := FileManagement.GetFileName(LocalFilePath);
+
+                                 IF ABSFilePath <> '' THEN
+                                   ABSFilePath := ABSFilePath + '\' + FileNameWithExtension
+                                 ELSE
+                                   ABSFilePath := FileNameWithExtension;
+
+                                 ACEAzureBlobStorageMgmt.UploadFile(Rec, ABSFilePath, FileInStream);
+                               END;
+                                }
+    }
+  }
+  CONTROLS
+  {
+    { 1000000000;0;Container;
+                ContainerType=ContentArea }
+
+    { 1000000001;1;Group  ;
+                Name=Group;
+                GroupType=Repeater }
+
+    { 1000000002;2;Field  ;
+                SourceExpr=Code }
+
+    { 1000000003;2;Field  ;
+                SourceExpr=Path }
+
+    { 1000000004;2;Field  ;
+                SourceExpr="Backup Path" }
+
+    { 1000000005;2;Field  ;
+                SourceExpr="Container Name";
+                OnAssistEdit=VAR
+                               tempABSContainer@1000000000 : TEMPORARY Record 63901;
+                             BEGIN
+                               ACEAzureBlobStorageMgmt.GetContainers(Rec, tempABSContainer);
+                               IF PAGE.RUNMODAL(0, tempABSContainer) = ACTION::LookupOK THEN
+                                 Rec.VALIDATE("Container Name", tempABSContainer.Name);
+                             END;
+                              }
+
+    { 1000000006;2;Field  ;
+                SourceExpr="Storage Account Name" }
+
+    { 1000000007;2;Field  ;
+                SourceExpr="Shared Access Key" }
+
+    { 1000000014;1;Group  ;
+                Name=Additional Settings;
+                CaptionML=[DEU=Zus„tzliche Einrichtungen;
+                           ENU=Additional Settings];
+                GroupType=Group }
+
+    { 1000000015;2;Field  ;
+                SourceExpr="Limit Results" }
+
+  }
+  CODE
+  {
+    VAR
+      ACEAzureBlobStorageMgmt@1000000000 : Codeunit 50044;
+      ContainerCreatedInfo@1000000001 : TextConst 'DEU=Container %1 wurde erfolgreich erstellt;ENU=Container %1 was created successfully';
+
+    BEGIN
+    END.
+  }
+}
+

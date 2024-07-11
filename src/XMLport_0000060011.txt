@@ -1,0 +1,214 @@
+OBJECT XMLport 60011 ABS Content Response Reader
+{
+  OBJECT-PROPERTIES
+  {
+    Date=11.07.24;
+    Time=14:44:50;
+    Modified=Yes;
+    Version List=ACE-ABS;
+  }
+  PROPERTIES
+  {
+    OnPreXMLport=BEGIN
+                   GlobEntryNo := "ABS Container Content".COUNT;
+                 END;
+
+  }
+  ELEMENTS
+  {
+    { [{32319A06-7944-4294-A4A5-1E5089AAA2F6}];  ;EnumerationResults  ;Element ;Text     }
+
+    { [{2FF1FB77-6FAE-449B-A922-3E17B3025BED}];1 ;ServiceEndpoint     ;Attribute;Text   ;
+                                                  Occurrence=Optional }
+
+    { [{3274ECB0-651D-4069-BBC4-CF29F0DAF74A}];1 ;ContainerName       ;Attribute;Text   ;
+                                                  Occurrence=Optional }
+
+    { [{919881E8-2B7A-47B9-AFC4-4FE1C6BECDF9}];1 ;Marker              ;Element ;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{236F9536-6A3C-4618-AD91-F70DBB89FEFA}];1 ;MaxResults          ;Element ;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{3E59F016-5BC7-4529-AB27-F18D6C0F8537}];1 ;Delimiter           ;Element ;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{EB98204D-62CC-448E-AEAE-94E0CE8100A9}];1 ;BlobPrefix          ;Element ;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{170CBD49-BCFF-44FF-8259-ECFE3D20492D}];2 ;Name                ;Element ;Text     }
+
+    { [{1FD31EBF-FC3D-4EC7-96B9-3852E7625571}];1 ;Blobs               ;Element ;Text     }
+
+    { [{72E8D9AE-ECD1-4D11-84B6-6FE352A5B786}];2 ;Blob                ;Element ;Table   ;
+                                                  SourceTable=Table64002;
+                                                  Temporary=Yes;
+                                                  MinOccurs=Zero;
+                                                  Import::OnBeforeInsertRecord=BEGIN
+                                                                                 GlobEntryNo := GlobEntryNo + 1;
+                                                                                 "ABS Container Content"."Entry No." := GlobEntryNo;
+                                                                                 "ABS Container Content".VALIDATE("Full Name");
+                                                                                 "ABS Container Content"."Container Name" := ContainerName;
+                                                                                 "ABS Container Content".ServiceEndpoint := ServiceEndpoint;
+                                                                                 "ABS Container Content"."ABS Account Code" := ABSStorageCode;
+                                                                               END;
+                                                                                }
+
+    { [{51E56F55-9878-4904-8383-17DBBC7E0B33}];3 ;Name                ;Element ;Field   ;
+                                                  DataType=Text;
+                                                  FieldValidate=Yes;
+                                                  SourceField=ABS Container Content::Full Name }
+
+    { [{A6B9AE9E-E44C-43D6-AEB7-D1C7C501253B}];3 ;Url                 ;Element ;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{E8B63F2B-FD50-4D94-82BD-3B251702FD6A}];3 ;Properties          ;Element ;Text     }
+
+    { [{A4D4C8CF-3BA0-4152-BEE9-85B2720FDC9C}];4 ;Creation-Time       ;Element ;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{0CBA5E87-A3BE-4B82-8770-B910C266CA7B}];4 ;Last-Modified       ;Element ;Text    ;
+                                                  DataType=DateTime;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once;
+                                                  Import::OnAfterAssignVariable=VAR
+                                                                                  netDateTime@1000000000 : DotNet "'mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.DateTime";
+                                                                                BEGIN
+                                                                                  netDateTime := netDateTime.Parse("Last-Modified");
+                                                                                  "ABS Container Content"."Last Modified" := netDateTime;
+                                                                                END;
+                                                                                 }
+
+    { [{32D6F0C1-5924-40F4-B345-300CA762993C}];4 ;Etag                ;Element ;Text    ;
+                                                  DataType=Text;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{4B273546-10B1-4935-A3CA-ABC8336896BC}];4 ;Content-Length      ;Element ;Field   ;
+                                                  DataType=Integer;
+                                                  SourceField=ABS Container Content::Content-Length;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{050FDBB6-A54F-4468-B807-39181817177F}];4 ;Content-Type        ;Element ;Field   ;
+                                                  DataType=Text;
+                                                  SourceField=ABS Container Content::Content-Type;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{2E6A05F8-826A-44E5-9F86-3D07ADFAE75F}];4 ;Content-Encoding    ;Element ;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{F59541DB-41A2-4FB6-9D12-C8CD59C29EBE}];4 ;Content-Language    ;Element ;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{D87D6112-AA87-47D3-9462-84EEEEDF7F57}];4 ;Content-CRC64       ;Element ;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{2E431E59-AC9C-4528-9972-EB53509DD8EC}];4 ;Content-MD5         ;Element ;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{57FB95FB-8BA4-4ECC-8717-F3BAD75BCAA3}];4 ;Cache-Control       ;Element ;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{65735444-3F3F-484C-9A48-4FEFDDB79A30}];4 ;Content-Disposition ;Element ;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{C9B16D59-D3EC-482F-AEA0-F4C75DCAB197}];4 ;BlobType            ;Element ;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{CE59A550-8A11-422B-BB6A-5F193DABE625}];4 ;AccessTier          ;Element ;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{55AD9FE4-9570-49EC-B5AC-49884C3B122A}];4 ;AccessTierInferred  ;Element ;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{E61BC878-FD9E-4CC7-9472-B2454A32EA66}];4 ;LeaseStatus         ;Element ;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{D5D70CF0-6B80-49CD-8252-23BBCCC545F3}];4 ;LeaseState          ;Element ;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{9385BB74-9132-4405-831D-1FB16F5ADE10}];4 ;ServerEncrypted     ;Element ;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{E46A0521-95BE-4902-B0B1-C2BC3712414C}];3 ;OrMetadata          ;Element ;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{F2B5CBAF-5DBD-4FC3-8B5B-FF15605CEEB6}];1 ;NextMarker          ;Element ;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+  }
+  EVENTS
+  {
+  }
+  REQUESTPAGE
+  {
+    PROPERTIES
+    {
+    }
+    CONTROLS
+    {
+    }
+  }
+  CODE
+  {
+    VAR
+      GlobEntryNo@1000000000 : Integer;
+      ABSStorageCode@1000000001 : Code[20];
+
+    [External]
+    PROCEDURE GetABSContent@1000000000(VAR _ABSContent@1000000000 : Record 64002);
+    VAR
+      EntryNo@1000000001 : Integer;
+    BEGIN
+      IF _ABSContent.FINDLAST THEN
+        EntryNo := _ABSContent."Entry No.";
+
+      IF "ABS Container Content".FINDSET THEN
+         REPEAT
+           EntryNo += 1;
+           _ABSContent.INIT;
+           _ABSContent.TRANSFERFIELDS("ABS Container Content");
+           _ABSContent."Entry No." := EntryNo;
+           _ABSContent.INSERT;
+         UNTIL "ABS Container Content".NEXT = 0;
+    END;
+
+    [External]
+    PROCEDURE GetNextMarker@1000000001() : Text;
+    BEGIN
+      EXIT(NextMarker);
+    END;
+
+    [External]
+    PROCEDURE SetStorageCode@1000000002(_ACEAzureBlobStorage@1000000000 : Record 60064);
+    BEGIN
+      ABSStorageCode := _ACEAzureBlobStorage.Code;
+    END;
+
+    BEGIN
+    END.
+  }
+}
+

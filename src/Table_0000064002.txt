@@ -1,0 +1,68 @@
+OBJECT Table 64002 ABS Container Content
+{
+  OBJECT-PROPERTIES
+  {
+    Date=11.07.24;
+    Time=15:00:29;
+    Modified=Yes;
+    Version List=ACE-ABS;
+  }
+  PROPERTIES
+  {
+    LookupPageID=Page60206;
+    DrillDownPageID=Page60206;
+  }
+  FIELDS
+  {
+    { 1   ;   ;Entry No.           ;Integer       ;DataClassification=ToBeClassified }
+    { 2   ;   ;Parent Directory    ;Text255       ;DataClassification=ToBeClassified }
+    { 3   ;   ;Level               ;Integer       ;DataClassification=ToBeClassified }
+    { 4   ;   ;Full Name           ;Text255       ;OnValidate=VAR
+                                                                LastCharPos@1000000000 : Integer;
+                                                                NoOfOccurances@1000000001 : Integer;
+                                                              BEGIN
+                                                                LastCharPos := GetLastCharacterPosInString("Full Name", '/', NoOfOccurances);
+                                                                Name := COPYSTR("Full Name", LastCharPos + 1);
+                                                                "Parent Directory" := COPYSTR("Full Name", 1, LastCharPos);
+                                                                Level := NoOfOccurances;
+                                                              END;
+
+                                                   DataClassification=ToBeClassified }
+    { 5   ;   ;Name                ;Text255       ;DataClassification=ToBeClassified }
+    { 6   ;   ;Creation Time       ;DateTime      ;DataClassification=ToBeClassified }
+    { 7   ;   ;Last Modified       ;DateTime      ;DataClassification=ToBeClassified }
+    { 8   ;   ;Etag                ;Text30        ;DataClassification=ToBeClassified }
+    { 9   ;   ;Content-Length      ;Integer       ;DataClassification=ToBeClassified }
+    { 10  ;   ;Content-Type        ;Text50        ;DataClassification=ToBeClassified }
+    { 100 ;   ;Container Name      ;Text50        ;DataClassification=ToBeClassified }
+    { 101 ;   ;ServiceEndpoint     ;Text255       ;DataClassification=ToBeClassified;
+                                                   CaptionML=[DEU=Dienst Endpunkt;
+                                                              ENU=ServiceEndpoint] }
+    { 102 ;   ;ABS Account Code    ;Code20        ;DataClassification=ToBeClassified;
+                                                   CaptionML=[DEU=ABS Account Code;
+                                                              ENU=ABS Account Code] }
+  }
+  KEYS
+  {
+    {    ;Entry No.                               ;Clustered=Yes }
+  }
+  FIELDGROUPS
+  {
+  }
+  CODE
+  {
+
+    LOCAL PROCEDURE GetLastCharacterPosInString@1000000000(_Text@1000000000 : Text;_Char@1000000001 : Text[1];VAR NoOfOccurances@1000000002 : Integer) LastCharPos : Integer;
+    BEGIN
+      WHILE STRPOS(_Text, _Char) > 0 DO BEGIN
+        LastCharPos += STRPOS(_Text, _Char);
+        _Text := COPYSTR(_Text, STRPOS(_Text, _Char)+1);
+        NoOfOccurances += 1;
+      END;
+    END;
+
+    BEGIN
+    END.
+  }
+}
+

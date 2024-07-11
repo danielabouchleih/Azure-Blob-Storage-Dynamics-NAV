@@ -1,0 +1,287 @@
+OBJECT Codeunit 50044 Azure Blob Storage Mgmt
+{
+  OBJECT-PROPERTIES
+  {
+    Date=11.07.24;
+    Time=14:56:53;
+    Modified=Yes;
+    Version List=ACE-ABS;
+  }
+  PROPERTIES
+  {
+    OnRun=BEGIN
+          END;
+
+  }
+  CODE
+  {
+    VAR
+      ABSAuthHelper@1000000006 : DotNet "'AzureBlobStorageAuthenticationHelper, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null'.AzureBlobStorageAuthenticationHelper.AzureStorageAuthenticationHelper";
+      httpRequestMessage@1000000007 : DotNet "'System.Net.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a'.System.Net.Http.HttpRequestMessage";
+      httpMethod@1000000008 : DotNet "'System.Net.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a'.System.Net.Http.HttpMethod";
+      httpClient@1000000009 : DotNet "'System.Net.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a'.System.Net.Http.HttpClient";
+      httpResponseMessage@1000000010 : DotNet "'System.Net.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a'.System.Net.Http.HttpResponseMessage";
+      httpStatusCode@1000000011 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Net.HttpStatusCode";
+      httpContent@1000000012 : DotNet "'System.Net.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a'.System.Net.Http.HttpContent";
+
+    [External]
+    PROCEDURE AuthenticateAgainstStorage@1000000000(VAR AzureBlobStorageAccount@1000000000 : Record 60064);
+    BEGIN
+      httpRequestMessage := httpRequestMessage.HttpRequestMessage(httpMethod.Get, AzureBlobStorageAccount.Path + '?comp=list');
+      BuildABSAuthBySharedKey(AzureBlobStorageAccount);
+      httpClient := httpClient.HttpClient();
+      httpResponseMessage := httpClient.SendAsync(httpRequestMessage).Result;
+
+      IF httpResponseMessage.IsSuccessStatusCode THEN
+        MESSAGE('Erfolg')
+      ELSE
+        ERROR('Fehler');
+    END;
+
+    [External]
+    PROCEDURE GetContainers@1000000001(VAR AzureBlobStorageAccount@1000000000 : Record 60064;VAR ABSContainer@1000000001 : Record 63901);
+    VAR
+      ResponseText@1000000002 : Text;
+    BEGIN
+      httpRequestMessage := httpRequestMessage.HttpRequestMessage(httpMethod.Get, AzureBlobStorageAccount.Path + '?comp=list');
+      BuildABSAuthBySharedKey(AzureBlobStorageAccount);
+      httpClient := httpClient.HttpClient();
+      httpResponseMessage := httpClient.SendAsync(httpRequestMessage).Result;
+      httpContent := httpResponseMessage.Content;
+
+      ////httpResponseMessage.EnsureSuccessStatusCode;
+      ResponseText := httpContent.ReadAsStringAsync().Result;
+
+      IF NOT httpResponseMessage.IsSuccessStatusCode THEN
+        ERROR(ResponseText);
+
+      ReadGetContainersXMLResponse(AzureBlobStorageAccount, ResponseText, ABSContainer);
+    END;
+
+    [External]
+    PROCEDURE CreateContainer@1000000002(VAR AzureBlobStorageAccount@1000000001 : Record 60064;VAR NewContainerName@1000000000 : Text);
+    BEGIN
+      httpRequestMessage := httpRequestMessage.HttpRequestMessage(httpMethod.Put, AzureBlobStorageAccount.Path + '/' + NewContainerName + '?restype=container');
+      BuildABSAuthBySharedKey(AzureBlobStorageAccount);
+      httpClient := httpClient.HttpClient();
+      httpResponseMessage := httpClient.SendAsync(httpRequestMessage).Result;
+      httpContent := httpResponseMessage.Content;
+
+      IF NOT httpResponseMessage.IsSuccessStatusCode THEN
+        ERROR(httpContent.ReadAsStringAsync.Result());
+    END;
+
+    [External]
+    PROCEDURE GetContent@1000000003(VAR AzureBlobStorageAccount@1000000001 : Record 60064;ContainerName@1000000005 : Text;VAR ABSContent@1000000000 : Record 64002;Prefix@1000000003 : Text;NextMarker@1000000006 : Text);
+    VAR
+      ResponseText@1000000002 : Text;
+      URL@1000000004 : Text;
+    BEGIN
+      //https://learn.microsoft.com/de-de/rest/api/storageservices/list-blobs?tabs=microsoft-entra-id
+      //GET https://myaccount.blob.core.windows.net/mycontainer?restype=container&comp=list
+
+      IF ContainerName = '' THEN
+        URL := AzureBlobStorageAccount.Path + '/' + AzureBlobStorageAccount."Container Name" + '?restype=container&comp=list'
+      ELSE
+        URL := AzureBlobStorageAccount.Path + '/' + ContainerName + '?restype=container&comp=list';
+
+      IF AzureBlobStorageAccount."Limit Results" <> 0 THEN
+        URL += '&maxresults=100';
+
+      IF Prefix <> '' THEN
+        URL += '&prefix=' + Prefix;
+
+      IF NextMarker <> '' THEN
+        URL += '&marker=' + NextMarker;
+
+      httpRequestMessage := httpRequestMessage.HttpRequestMessage(httpMethod.Get, URL);
+      BuildABSAuthBySharedKey(AzureBlobStorageAccount);
+      httpClient := httpClient.HttpClient();
+      httpResponseMessage := httpClient.SendAsync(httpRequestMessage).Result;
+      httpContent := httpResponseMessage.Content;
+
+      IF NOT httpResponseMessage.IsSuccessStatusCode THEN
+        ERROR(FORMAT(httpResponseMessage.StatusCode) + ' ' + FORMAT(httpContent.ReadAsStringAsync.Result()));
+
+      ResponseText := httpContent.ReadAsStringAsync().Result;
+      IF ResponseText = '' THEN
+        EXIT;
+
+      NextMarker := ReadGetContentXMLResponse(AzureBlobStorageAccount, ResponseText, ABSContent);
+
+      IF NextMarker <> '' THEN
+        GetContent(AzureBlobStorageAccount, ContainerName, ABSContent, Prefix, NextMarker);
+    END;
+
+    [External]
+    PROCEDURE UploadFile@1000000004(AzureBlobStorageAccount@1000000001 : Record 60064;FullFileName@1000000000 : Text;FileContent@1000000002 : InStream);
+    VAR
+      URL@1000000003 : Text;
+      StreamContent@1000000004 : DotNet "'System.Net.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a'.System.Net.Http.StreamContent";
+      StringContent@1000000005 : Text;
+      MimeType@1000000006 : Text;
+      MimeMapping@1000000007 : DotNet "'System.Web, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a'.System.Web.MimeMapping";
+      MediaTypeHeaderValue@1000000008 : DotNet "'System.Net.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a'.System.Net.Http.Headers.MediaTypeHeaderValue";
+    BEGIN
+      //PUT https://myaccount.blob.core.windows.net/mycontainer/filepath/filename.ext
+
+      URL := AzureBlobStorageAccount.Path + '/' + AzureBlobStorageAccount."Container Name" + '/' + FullFileName;
+      MimeType := MimeMapping.GetMimeMapping(FullFileName);
+
+      httpRequestMessage := httpRequestMessage.HttpRequestMessage(httpMethod.Put, URL);
+      StreamContent := StreamContent.StreamContent(FileContent);
+      httpRequestMessage.Content := StreamContent;
+      //httpRequestMessage.Content.Headers.ContentType := MediaTypeHeaderValue.MediaTypeHeaderValue(MimeType);
+
+      httpRequestMessage.Headers.Add('x-ms-blob-type', 'BlockBlob');
+      BuildABSAuthBySharedKey(AzureBlobStorageAccount);
+
+      httpClient := httpClient.HttpClient();
+      httpResponseMessage := httpClient.SendAsync(httpRequestMessage).Result;
+      httpContent := httpResponseMessage.Content;
+
+      IF NOT httpResponseMessage.IsSuccessStatusCode THEN
+        ERROR(FORMAT(httpResponseMessage.StatusCode) + ' ' + FORMAT(httpContent.ReadAsStringAsync.Result()));
+    END;
+
+    [External]
+    PROCEDURE DownloadFile@1000000005(AzureBlobStorageAccount@1000000001 : Record 60064;ABSContent@1000000000 : Record 64002);
+    VAR
+      FileInStream@1000000002 : InStream;
+      FileManagement@1000000003 : Codeunit 419;
+      FileName@1000000004 : Text;
+    BEGIN
+      DownloadFileToStream(AzureBlobStorageAccount, ABSContent, FileInStream);
+      FileName := ABSContent.Name;
+      FILE.DOWNLOADFROMSTREAM(FileInStream, 'Download File', 'C:\', '', FileName);
+    END;
+
+    [External]
+    PROCEDURE DownloadFileToStream@1000000006(AzureBlobStorageAccount@1000000001 : Record 60064;ABSContent@1000000000 : Record 64002;VAR FileInStream@1000000002 : InStream) : Text;
+    VAR
+      ResponseText@1000000004 : Text;
+      URL@1000000003 : Text;
+      FileOutStream@1000000005 : OutStream;
+      TempBlob@1000000006 : Record 99008535;
+      FileStream@1000000007 : DotNet "'mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.IO.FileStream";
+    BEGIN
+      //https://myaccount.blob.core.windows.net/mycontainer/myblob
+      TempBlob.Blob.CREATEOUTSTREAM(FileOutStream);
+      TempBlob.Blob.CREATEINSTREAM(FileInStream);
+
+      URL := AzureBlobStorageAccount.Path + '/' + AzureBlobStorageAccount."Container Name" + '/' + ABSContent."Full Name";
+
+      httpRequestMessage := httpRequestMessage.HttpRequestMessage(httpMethod.Get, URL);
+      BuildABSAuthBySharedKey(AzureBlobStorageAccount);
+      httpClient := httpClient.HttpClient();
+      httpResponseMessage := httpClient.SendAsync(httpRequestMessage).Result;
+      httpContent := httpResponseMessage.Content;
+
+      IF NOT httpResponseMessage.IsSuccessStatusCode THEN
+        ERROR(FORMAT(httpResponseMessage.StatusCode) + ' ' + FORMAT(httpContent.ReadAsStringAsync.Result()));
+
+      ResponseText := httpContent.ReadAsStringAsync().Result;
+      httpContent.CopyToAsync(FileInStream);
+
+      EXIT(ResponseText);
+    END;
+
+    [External]
+    PROCEDURE DeleteFile@1000000007(AzureBlobStorageAccount@1000000002 : Record 60064;ABSContent@1000000001 : Record 64002);
+    VAR
+      ResponseText@1000000003 : Text;
+      URL@1000000000 : Text;
+    BEGIN
+      URL := AzureBlobStorageAccount.Path + '/' + AzureBlobStorageAccount."Container Name" + '/' + ABSContent."Full Name";
+
+      httpRequestMessage := httpRequestMessage.HttpRequestMessage(httpMethod.Delete, URL);
+      BuildABSAuthBySharedKey(AzureBlobStorageAccount);
+      httpClient := httpClient.HttpClient();
+      httpResponseMessage := httpClient.SendAsync(httpRequestMessage).Result;
+      httpContent := httpResponseMessage.Content;
+
+      IF NOT httpResponseMessage.IsSuccessStatusCode THEN
+        ERROR(FORMAT(httpResponseMessage.StatusCode) + ' ' + FORMAT(httpContent.ReadAsStringAsync.Result()));
+    END;
+
+    [External]
+    PROCEDURE DeleteContainer@1000000009(AzureBlobStorageAccount@1000000001 : Record 60064;ABSContainer@1000000002 : Record 63901);
+    VAR
+      ResponseText@1000000003 : Text;
+      URL@1000000000 : Text;
+    BEGIN
+      URL := AzureBlobStorageAccount.Path + '/' + ABSContainer.Name + '?restype=container';
+
+      httpRequestMessage := httpRequestMessage.HttpRequestMessage(httpMethod.Delete, URL);
+      BuildABSAuthBySharedKey(AzureBlobStorageAccount);
+      httpClient := httpClient.HttpClient();
+      httpResponseMessage := httpClient.SendAsync(httpRequestMessage).Result;
+      httpContent := httpResponseMessage.Content;
+
+      IF NOT httpResponseMessage.IsSuccessStatusCode THEN
+        ERROR(FORMAT(httpResponseMessage.StatusCode) + ' ' + FORMAT(httpContent.ReadAsStringAsync.Result()));
+    END;
+
+    LOCAL PROCEDURE BuildABSAuthBySharedKey@1000000008(VAR AzureBlobStorageAccount@1000000000 : Record 60064);
+    BEGIN
+      httpRequestMessage.Headers.Add('x-ms-date', ABSAuthHelper.GetXMSDateHeaderValue());
+      httpRequestMessage.Headers.Add('x-ms-version', '2024-08-04');
+
+      httpRequestMessage.Headers.Authorization := ABSAuthHelper.GetAuthorizationHeader(AzureBlobStorageAccount."Storage Account Name", AzureBlobStorageAccount."Shared Access Key", CURRENTDATETIME, httpRequestMessage, '', '');
+    END;
+
+    LOCAL PROCEDURE "===XML==="@1000000011();
+    BEGIN
+    END;
+
+    LOCAL PROCEDURE ReadGetContainersXMLResponse@1000000013(AzureBlobStorageAccount@1000000007 : Record 60064;_XML@1000000000 : Text;VAR _ABSContainer@1000000001 : Record 63901);
+    VAR
+      XMLBufferReader@1000000002 : Codeunit 1239;
+      ABSContainerResponseReader@1000000003 : XMLport 60010;
+      XMLInStream@1000000004 : InStream;
+      TempBlob@1000000005 : Record 99008535;
+      XMLOutStream@1000000006 : OutStream;
+    BEGIN
+      //MESSAGE(_XML);
+      TempBlob.Blob.CREATEOUTSTREAM(XMLOutStream, TEXTENCODING::UTF8);
+      TempBlob.Blob.CREATEINSTREAM(XMLInStream, TEXTENCODING::UTF8);
+
+      XMLOutStream.WRITETEXT(_XML);
+      COPYSTREAM(XMLOutStream, XMLInStream);
+      //XMLInStream.READTEXT(_XML);
+
+      ABSContainerResponseReader.SetABSContainers(_ABSContainer);
+      ABSContainerResponseReader.SETSOURCE(XMLInStream);
+      ABSContainerResponseReader.SetABSContainerCode(AzureBlobStorageAccount.Code);
+      ABSContainerResponseReader.IMPORT();
+      ABSContainerResponseReader.GetABSContainers(_ABSContainer);
+    END;
+
+    LOCAL PROCEDURE ReadGetContentXMLResponse@1000000012(_AzureBlobStorageAccount@1000000007 : Record 60064;_XML@1000000000 : Text;VAR _ABSContent@1000000001 : Record 64002) NextMarker : Text;
+    VAR
+      XMLBufferReader@1000000002 : Codeunit 1239;
+      ABSContentResponseReader@1000000003 : XMLport 60011;
+      XMLInStream@1000000004 : InStream;
+      TempBlob@1000000005 : Record 99008535;
+      XMLOutStream@1000000006 : OutStream;
+    BEGIN
+      TempBlob.Blob.CREATEOUTSTREAM(XMLOutStream, TEXTENCODING::UTF8);
+      TempBlob.Blob.CREATEINSTREAM(XMLInStream, TEXTENCODING::UTF8);
+
+      XMLOutStream.WRITETEXT(_XML);
+      COPYSTREAM(XMLOutStream, XMLInStream);
+      //XMLInStream.READTEXT(_XML);
+
+      ABSContentResponseReader.SetStorageCode(_AzureBlobStorageAccount);
+      ABSContentResponseReader.SETSOURCE(XMLInStream);
+
+      ABSContentResponseReader.IMPORT();
+      ABSContentResponseReader.GetABSContent(_ABSContent);
+      NextMarker := ABSContentResponseReader.GetNextMarker();
+    END;
+
+    BEGIN
+    END.
+  }
+}
+
