@@ -1,0 +1,56 @@
+OBJECT Table 50000 Azure Blob Storage Account
+{
+  OBJECT-PROPERTIES
+  {
+    Date=16.07.24;
+    Time=15:33:25;
+    Modified=Yes;
+    Version List=ABS;
+  }
+  PROPERTIES
+  {
+    CaptionML=[DEU=Azure Blob Storage Konto;
+               ENU=Azure Blob Storage Account];
+    LookupPageID=Page50000;
+    DrillDownPageID=Page50000;
+  }
+  FIELDS
+  {
+    { 1   ;   ;Code                ;Code20        ;DataClassification=ToBeClassified;
+                                                   CaptionML=[DEU=Code;
+                                                              ENU=Code] }
+    { 3   ;   ;Path                ;Text250       ;DataClassification=ToBeClassified;
+                                                   CaptionML=[DEU=Pfad;
+                                                              ENU=Path] }
+    { 4   ;   ;Backup Path         ;Text250       ;DataClassification=ToBeClassified;
+                                                   CaptionML=[DEU=Backup-Pfad;
+                                                              ENU=Backup Path] }
+    { 5   ;   ;Container Name      ;Text250       ;DataClassification=ToBeClassified;
+                                                   CaptionML=[DEU=Container Name;
+                                                              ENU=Container Name] }
+    { 10  ;   ;Storage Account Name;Text250       ;DataClassification=ToBeClassified;
+                                                   CaptionML=[DEU=Speicheraccount Name;
+                                                              ENU=Storage Account Name] }
+    { 11  ;   ;Shared Access Key   ;Text250       ;ExtendedDatatype=Masked;
+                                                   DataClassification=ToBeClassified;
+                                                   CaptionML=[DEU=Geteilter ZugriffsschlÅssel;
+                                                              ENU=Shared Access Key] }
+    { 20  ;   ;Limit Results       ;Integer       ;DataClassification=ToBeClassified;
+                                                   CaptionML=[DEU=Ergebnisse begrenzen;
+                                                              ENU=Limit Results] }
+  }
+  KEYS
+  {
+    {    ;Code                                    ;Clustered=Yes }
+  }
+  FIELDGROUPS
+  {
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+

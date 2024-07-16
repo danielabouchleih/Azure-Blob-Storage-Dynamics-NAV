@@ -1,0 +1,117 @@
+OBJECT Page 50002 ABS Container Contents
+{
+  OBJECT-PROPERTIES
+  {
+    Date=16.07.24;
+    Time=15:26:22;
+    Modified=Yes;
+    Version List=ABS;
+  }
+  PROPERTIES
+  {
+    Editable=No;
+    InsertAllowed=No;
+    DeleteAllowed=No;
+    ModifyAllowed=No;
+    SourceTable=Table50002;
+    PageType=List;
+    ActionList=ACTIONS
+    {
+      { 1000000007;  ;ActionContainer;
+                      ActionContainerType=ActionItems }
+      { 1000000008;1 ;Action    ;
+                      Name=Download File;
+                      CaptionML=[DEU=Datei herunterladen;
+                                 ENU=Download File];
+                      Promoted=Yes;
+                      PromotedIsBig=Yes;
+                      Image=ExportFile;
+                      PromotedCategory=Process;
+                      PromotedOnly=Yes;
+                      OnAction=VAR
+                                 FileInStream@1000000000 : InStream;
+                                 FileOutStream@1000000005 : OutStream;
+                                 FileName@1000000001 : Text;
+                                 TempBlob@1000000002 : Record 99008535;
+                                 FileManagement@1000000003 : Codeunit 419;
+                                 ResponseText@1000000004 : Text;
+                               BEGIN
+                                 DownloadFile;
+                               END;
+                                }
+      { 1000000009;1 ;Action    ;
+                      Name=Delete File;
+                      CaptionML=[DEU=Datei l”schen;
+                                 ENU=Delete File];
+                      Promoted=Yes;
+                      PromotedIsBig=Yes;
+                      Image=Delete;
+                      PromotedCategory=Process;
+                      PromotedOnly=Yes;
+                      OnAction=BEGIN
+                                 IF NOT CONFIRM(ConfirmDelete, FALSE, Rec.Name) THEN
+                                   EXIT;
+
+                                 AzureBlobStorageAccount.GET(Rec."ABS Account Code");
+                                 AzureBlobStorageMgmt.DeleteFile(AzureBlobStorageAccount, Rec);
+                                 DELETE;
+                               END;
+                                }
+    }
+  }
+  CONTROLS
+  {
+    { 1000000000;0;Container;
+                ContainerType=ContentArea }
+
+    { 1000000001;1;Group  ;
+                Name=Group;
+                GroupType=Repeater }
+
+    { 1000000010;2;Field  ;
+                SourceExpr=Name;
+                OnLookup=BEGIN
+                           DownloadFile;
+                         END;
+                          }
+
+    { 1000000002;2;Field  ;
+                SourceExpr="Parent Directory" }
+
+    { 1000000003;2;Field  ;
+                SourceExpr=Level }
+
+    { 1000000004;2;Field  ;
+                SourceExpr="Full Name" }
+
+    { 1000000006;2;Field  ;
+                SourceExpr="Last Modified" }
+
+    { 1000000005;1;Group  ;
+                GroupType=Group }
+
+    { 1000000011;2;Field  ;
+                SourceExpr="Content-Length" }
+
+    { 1000000012;2;Field  ;
+                SourceExpr="Content-Type" }
+
+  }
+  CODE
+  {
+    VAR
+      AzureBlobStorageMgmt@1000000000 : Codeunit 50000;
+      AzureBlobStorageAccount@1000000001 : Record 50000;
+      ConfirmDelete@1000000002 : TextConst 'DEU=Wollen Sie die Datei %1 wirklich l”schen? Dies ist unumkehrbar!;ENU=Do you really want to delete the file %1? This is irreversible!';
+
+    LOCAL PROCEDURE DownloadFile@1000000000();
+    BEGIN
+      AzureBlobStorageAccount.GET(Rec."ABS Account Code");
+      AzureBlobStorageMgmt.DownloadFile(AzureBlobStorageAccount, Rec);
+    END;
+
+    BEGIN
+    END.
+  }
+}
+

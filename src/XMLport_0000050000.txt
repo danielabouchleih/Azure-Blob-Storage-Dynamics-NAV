@@ -1,0 +1,140 @@
+OBJECT XMLport 50000 ABS Container Response Reader
+{
+  OBJECT-PROPERTIES
+  {
+    Date=16.07.24;
+    Time=15:16:32;
+    Modified=Yes;
+    Version List=ABS;
+  }
+  PROPERTIES
+  {
+    Encoding=UTF-8;
+    Format/Evaluate=XML Format/Evaluate;
+  }
+  ELEMENTS
+  {
+    { [{1DA7353F-4EEE-4E51-B582-9699DCABE1E9}];  ;EnumerationResults  ;Element ;Text     }
+
+    { [{C8C5AD76-DE2A-413F-AF53-DA794A36F556}];1 ;ServiceEndpoint     ;Attribute;Text    }
+
+    { [{4F1D0AAC-0896-40FA-99FF-B4673CE20474}];1 ;Containers          ;Element ;Text     }
+
+    { [{6A28F40B-E909-4B99-8E13-EF8F9AC5CF77}];2 ;Container           ;Element ;Table   ;
+                                                  SourceTable=Table50001;
+                                                  Temporary=Yes;
+                                                  Import::OnBeforeInsertRecord=BEGIN
+                                                                                 "ABS Container".ServiceEndpoint := ServiceEndpoint;
+                                                                                 "ABS Container"."ABS Account Code" := ABSStorageCode;
+                                                                               END;
+                                                                                }
+
+    { [{2586DF4B-29AA-49C6-B503-01DFA2974948}];3 ;Name                ;Element ;Field   ;
+                                                  DataType=Text;
+                                                  SourceField=ABS Container::Name }
+
+    { [{E37EFB6B-93ED-4D12-BEFC-25A67C0025D9}];3 ;Properties          ;Element ;Text     }
+
+    { [{76BCAFDD-FC82-482E-A777-8E2659DC48E3}];4 ;Last-Modified       ;Element ;Text    ;
+                                                  DataType=DateTime;
+                                                  Import::OnAfterAssignVariable=VAR
+                                                                                  netDateTime@1000000000 : DotNet "'mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.DateTime";
+                                                                                BEGIN
+                                                                                  netDateTime := netDateTime.Parse("Last-Modified");
+                                                                                  "ABS Container"."Last Modified" := netDateTime;
+                                                                                END;
+                                                                                 }
+
+    { [{653A4578-4200-4592-8E76-086C4C9167C9}];4 ;Etag                ;Element ;Field   ;
+                                                  DataType=Text;
+                                                  SourceField=ABS Container::Etag }
+
+    { [{258B35B1-F2B1-4097-8A25-C3E921763831}];4 ;LeaseStatus         ;Element ;Field   ;
+                                                  DataType=Text;
+                                                  SourceField=ABS Container::Lease Status }
+
+    { [{B4ECA585-6326-4269-A275-8ACD4FA939D9}];4 ;LeaseState          ;Element ;Field   ;
+                                                  DataType=Text;
+                                                  SourceField=ABS Container::Lease State }
+
+    { [{0CD9EF61-E21A-4E37-AAAC-DD95DDB301D0}];4 ;DefaultEncryptionScope;Element;Text   ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{99F74099-53A5-4548-ABE1-B4EDD43CDB0A}];4 ;DenyEncryptionScopeOverride;Element;Text;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{574A17A4-97A1-45BA-9B50-C84BFE61E1A5}];4 ;HasImmutabilityPolicy;Element;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{9EE6095E-6DBE-4D28-B222-D7882CF95193}];4 ;HasLegalHold        ;Element ;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{1C283C44-8B4E-440A-BBB6-552CACFB347A}];4 ;ImmutableStorageWithVersioningEnabled;Element;Text;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+    { [{F33AA1FC-F974-4EFF-9C27-A1D28D94DAB3}];1 ;NextMarker          ;Element ;Text    ;
+                                                  MinOccurs=Zero;
+                                                  MaxOccurs=Once }
+
+  }
+  EVENTS
+  {
+  }
+  REQUESTPAGE
+  {
+    PROPERTIES
+    {
+    }
+    CONTROLS
+    {
+    }
+  }
+  CODE
+  {
+    VAR
+      ABSStorageCode@1000000000 : Code[20];
+
+    [External]
+    PROCEDURE SetABSContainers@1000000003(VAR _ABSContainers@1000000000 : Record 50001);
+    BEGIN
+      IF _ABSContainers.FINDSET THEN
+         REPEAT
+           "ABS Container".INIT;
+           "ABS Container".TRANSFERFIELDS(_ABSContainers);
+           "ABS Container".INSERT;
+         UNTIL _ABSContainers.NEXT = 0;
+    END;
+
+    [External]
+    PROCEDURE SetABSContainerCode@1000000002(_ABSStorageCode@1000000000 : Code[20]);
+    BEGIN
+      ABSStorageCode := _ABSStorageCode;
+    END;
+
+    [External]
+    PROCEDURE GetABSContainers@1000000000(VAR _ABSContainers@1000000000 : Record 50001);
+    BEGIN
+      IF "ABS Container".FINDSET THEN
+         REPEAT
+           _ABSContainers.INIT;
+           _ABSContainers.TRANSFERFIELDS("ABS Container");
+           _ABSContainers.INSERT;
+         UNTIL "ABS Container".NEXT = 0;
+    END;
+
+    [External]
+    PROCEDURE GetNextMarker@1000000001() : Text;
+    BEGIN
+      EXIT(NextMarker);
+    END;
+
+    BEGIN
+    END.
+  }
+}
+

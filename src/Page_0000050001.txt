@@ -1,0 +1,139 @@
+OBJECT Page 50001 ABS Containers
+{
+  OBJECT-PROPERTIES
+  {
+    Date=16.07.24;
+    Time=15:24:26;
+    Modified=Yes;
+    Version List=ABS;
+  }
+  PROPERTIES
+  {
+    InsertAllowed=No;
+    DeleteAllowed=No;
+    ModifyAllowed=No;
+    LinksAllowed=No;
+    SourceTable=Table50001;
+    PageType=List;
+    ActionList=ACTIONS
+    {
+      { 1000000008;  ;ActionContainer;
+                      ActionContainerType=ActionItems }
+      { 1000000009;1 ;Action    ;
+                      Name=Delete Container;
+                      CaptionML=[DEU=Container l”schen;
+                                 ENU=Delete Container];
+                      Promoted=Yes;
+                      PromotedIsBig=Yes;
+                      Image=Delete;
+                      PromotedCategory=Process;
+                      PromotedOnly=Yes;
+                      OnAction=VAR
+                                 AzureBlobStorageAccount@1000000000 : Record 50000;
+                               BEGIN
+                                 IF NOT CONFIRM(ConfirmDelete, FALSE, Rec.Name) THEN
+                                   EXIT;
+
+                                 AzureBlobStorageAccount.GET(Rec."ABS Account Code");
+                                 AzureBlobStorageMgmt.DeleteContainer(AzureBlobStorageAccount, Rec);
+                                 DELETE;
+                               END;
+                                }
+      { 1000000012;1 ;Action    ;
+                      Name=List Files;
+                      CaptionML=[DEU=Dateien anzeigen;
+                                 ENU=List Files];
+                      Promoted=Yes;
+                      PromotedIsBig=Yes;
+                      Image=OrderList;
+                      PromotedCategory=Process;
+                      PromotedOnly=Yes;
+                      OnAction=VAR
+                                 AzureBlobStorageAccount@1000000001 : Record 50000;
+                                 tempABSContainerContent@1000000000 : TEMPORARY Record 50002;
+                               BEGIN
+                                 AzureBlobStorageAccount.GET(Rec."ABS Account Code");
+
+
+                                 AzureBlobStorageMgmt.GetContent(AzureBlobStorageAccount, Rec.Name, tempABSContainerContent, '', '');
+                                 PAGE.RUN(0, tempABSContainerContent);
+                               END;
+                                }
+      { 1000000010;1 ;Action    ;
+                      Name=Upload File;
+                      CaptionML=[DEU=Datei hochladen;
+                                 ENU=Upload  File];
+                      Promoted=Yes;
+                      PromotedIsBig=Yes;
+                      Image=Import;
+                      PromotedCategory=Process;
+                      PromotedOnly=Yes;
+                      OnAction=VAR
+                                 LocalFilePath@1000000000 : Text;
+                                 FileManagement@1000000001 : Codeunit 419;
+                                 TempBlob@1000000002 : TEMPORARY Record 99008535;
+                                 FileInStream@1000000003 : InStream;
+                                 ABSFilePath@1000000004 : Text;
+                                 FileNameWithExtension@1000000005 : Text;
+                                 Window@1000000006 : DotNet "'Microsoft.VisualBasic, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a'.Microsoft.VisualBasic.Interaction" RUNONCLIENT;
+                                 AzureBlobStorageAccount@1000000007 : Record 50000;
+                               BEGIN
+                                 AzureBlobStorageAccount.GET(Rec."ABS Account Code");
+
+                                 ABSFilePath := Window.InputBox('ABS Pfad:', 'Geben Sie den Pfad im Azure Blob Storage an', '', 100, 100);
+                                 TempBlob.Blob.CREATEINSTREAM(FileInStream);
+
+                                 LocalFilePath := FileManagement.UploadFile('Datei hochladen', LocalFilePath);
+                                 FileManagement.BLOBImportFromServerFile(TempBlob, LocalFilePath);
+                                 FileNameWithExtension := FileManagement.GetFileName(LocalFilePath);
+
+                                 IF ABSFilePath <> '' THEN
+                                   ABSFilePath := ABSFilePath + '\' + FileNameWithExtension
+                                 ELSE
+                                   ABSFilePath := FileNameWithExtension;
+
+                                 AzureBlobStorageMgmt.UploadFileInStream(AzureBlobStorageAccount, ABSFilePath, FileInStream);
+                               END;
+                                }
+    }
+  }
+  CONTROLS
+  {
+    { 1000000000;0;Container;
+                ContainerType=ContentArea }
+
+    { 1000000001;1;Group  ;
+                Name=Group;
+                GroupType=Repeater }
+
+    { 1000000002;2;Field  ;
+                SourceExpr=Name }
+
+    { 1000000003;2;Field  ;
+                SourceExpr="Last Modified" }
+
+    { 1000000004;1;Group  ;
+                Name=Details;
+                GroupType=Group }
+
+    { 1000000005;2;Field  ;
+                SourceExpr=Etag }
+
+    { 1000000006;2;Field  ;
+                SourceExpr="Lease Status" }
+
+    { 1000000007;2;Field  ;
+                SourceExpr="Lease State" }
+
+  }
+  CODE
+  {
+    VAR
+      AzureBlobStorageMgmt@1000000000 : Codeunit 50000;
+      ConfirmDelete@1000000001 : TextConst 'DEU=Wollen Sie den Container %1 und dessen Inhalte wirklich l”schen? Dies ist unumkehrbar!;ENU=Do you really want to delete the container %1 and its content? This is irreversible';
+
+    BEGIN
+    END.
+  }
+}
+

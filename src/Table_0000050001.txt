@@ -1,0 +1,51 @@
+OBJECT Table 50001 ABS Container
+{
+  OBJECT-PROPERTIES
+  {
+    Date=16.07.24;
+    Time=15:33:41;
+    Modified=Yes;
+    Version List=ABS;
+  }
+  PROPERTIES
+  {
+    LookupPageID=Page50001;
+    DrillDownPageID=Page50001;
+  }
+  FIELDS
+  {
+    { 1   ;   ;Name                ;Text255       ;DataClassification=ToBeClassified;
+                                                   CaptionML=[DEU=Name;
+                                                              ENU=Name] }
+    { 2   ;   ;Last Modified       ;DateTime      ;DataClassification=ToBeClassified;
+                                                   CaptionML=[DEU=Zuletzt ge„ndert;
+                                                              ENU=Last Modified] }
+    { 10  ;   ;Etag                ;Text30        ;DataClassification=ToBeClassified;
+                                                   CaptionML=[DEU=Etag;
+                                                              ENU=Etag] }
+    { 11  ;   ;Lease Status        ;Text50        ;DataClassification=ToBeClassified;
+                                                   CaptionML=[DEU=Lease Status;
+                                                              ENU=Lease Status] }
+    { 12  ;   ;Lease State         ;Text50        ;DataClassification=ToBeClassified }
+    { 100 ;   ;ServiceEndpoint     ;Text250       ;DataClassification=ToBeClassified;
+                                                   CaptionML=[DEU=Dienst Endpunkt;
+                                                              ENU=ServiceEndpoint] }
+    { 102 ;   ;ABS Account Code    ;Code20        ;DataClassification=ToBeClassified;
+                                                   CaptionML=[DEU=ABS Account Code;
+                                                              ENU=ABS Account Code] }
+  }
+  KEYS
+  {
+    {    ;Name                                    ;Clustered=Yes }
+  }
+  FIELDGROUPS
+  {
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+
