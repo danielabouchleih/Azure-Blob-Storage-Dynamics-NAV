@@ -13,8 +13,13 @@ The following fields must be filled in on this page:
 
 ## Set Container Name
 The system allows values to be entered manually in the Container Name field. There is also an Assist Edit, which opens a list of containers and allows you to make a selection.
+![alt text](set-container-name.png)
+
+# Buttons
+![alt text](abs-account-buttons.png)
 
 ## Test Authentication
+This Buttons tests if your credentials are working by trying to fetch a list of containers. If this call is successful a message will pop up otherwise an error.
 
 ## List Containers
 

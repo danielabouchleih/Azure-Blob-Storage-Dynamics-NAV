@@ -10,18 +10,20 @@ The main functions are:
 6. Upload files/blobs
 7. Delete files/blob
 
+##⚠️ Current State
+* Currently only english (ENU) and german (DEU) captions are set.
+* The Shared Access Key is NOT stored in the isolated storage of NAV, but directly in the table.
+
 # Setup
-
-## .net Library
-Copy the dll-File located in the lib-Folder into the Addins-Folder of the ServiceTier and RoleTrailored Client (preferably create a new Folder called AzureBlobStorage for the sake of order)
-* Service Tier: C:\Program Files\Microsoft Dynamics 365 Business Central\140\RoleTailored Client\Add-ins\AzureBlobStorage
-* RTC: C:\Program Files\Microsoft Dynamics 365 Business Central\140\Service\Add-ins\AzureBlobStorage
-
-Source of Code: https://github.com/Azure-Samples/storage-dotnet-rest-api-with-auth
-Including bugfixes for following issues:
-* https://github.com/Azure-Samples/storage-dotnet-rest-api-with-auth/issues/16
-* https://github.com/Azure-Samples/storage-dotnet-rest-api-with-auth/issues/21
+Check the following documentations for 
+* [Frontend Documentation](<doc/Frontend Documentation.md>)
+* [Technical Documentation](<doc/Technical Documentation.md>)
 
 ## NAV-Objects
+
+ :warning:
+ **Importing Textfiles will overwrite existing objects without confirmation!** :warning:
+
 Check your license before importing the objects. If the number range is already occupied, the NAV object must be renumbered manually. In this case download the txt-Files and edit them via TextEditor.
-Don't forget to update the references!
+
+**Don't forget to update the references!**
