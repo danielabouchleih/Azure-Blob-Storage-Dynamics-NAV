@@ -10,7 +10,7 @@ The main functions are:
 6. Upload files/blobs
 7. Delete files/blob
 
-##⚠️ Current State
+## Current State
 * Currently only english (ENU) and german (DEU) captions are set.
 * The Shared Access Key is NOT stored in the isolated storage of NAV, but directly in the table.
 
