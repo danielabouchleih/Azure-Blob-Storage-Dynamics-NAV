@@ -1,3 +1,5 @@
+![NAV meets ABS](https://github.com/user-attachments/assets/de3cc5ba-c412-4ef3-928b-abd796c2b509)
+
 # Azure Blob Storage for Dynamics NAV
 This repository will provide a C/AL written .net-based access to Azure Blob Storages via Rest API Calls
 
