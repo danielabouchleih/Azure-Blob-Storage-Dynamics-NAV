@@ -18,13 +18,39 @@ The system allows values to be entered manually in the Container Name field. The
 # Buttons
 ![alt text](abs-account-buttons.png)
 
+* Authentifizierung testen = Test Authentication
+* Container anzeigen = Show Containers
+* Container erstellen = Create Container
+* Dateien anzeigen = Show Files
+* Datei hochladen = Upload File
+
 ## Test Authentication
 This Buttons tests if your credentials are working by trying to fetch a list of containers. If this call is successful a message will pop up otherwise an error.
 
-## List Containers
+## Show Containers
+
+![alt text](abs-list-containers-button.png)
+
+![alt text](abs-list-containers.png)
 
 ## Create Container
 
-## List Files
+![alt text](abs-create-container-button.png)
+
+![alt text](abs-new-containername-dialog.png)
+
+![alt text](abs-create-container-success-info.png)
+
+## Show Files
+
+![alt text](abs-show-files-button.png)
+
+![alt text](abs-content-list.png)
 
 ## Upload Files
+
+![alt text](abs-upload-file-button.png)
+
+![alt text](abs-upload-file-input-filepath.png)
+
+![alt text](abs-upload-file-filepicker.png)
